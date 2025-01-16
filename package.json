@@ -1,0 +1,37 @@
+{
+  "name": "octoconn",
+  "version": "1.0.0",
+  "main": "src/server.ts",
+  "dependencies": {
+    "@prisma/client": "^6.2.1",
+    "@types/cors": "^2.8.17",
+    "baileys": "^6.7.9",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "pino-http": "^10.4.0",
+    "prisma": "^6.2.1",
+    "swagger-autogen": "^2.23.7",
+    "swagger-ui-express": "^5.0.1"
+  },
+  "scripts": {
+    "build": "tsc && npx prisma generate && npx prisma db push && ts-node src/swagger.ts",
+    "start": "node dist/main.js",
+    "dev": "ts-node-dev --respawn --transpile-only src/main.ts",
+    "swagger": "ts-node src/swagger.ts",
+    "prod": "npm run build && node dist/main.js",
+    "prod:dev": "ts-node-dev --respawn src/main.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.7",
+    "@types/swagger-ui-express": "^4.1.7",
+    "nodemon": "^3.1.9",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.7.3"
+  }
+}
