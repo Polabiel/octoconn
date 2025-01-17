@@ -6,9 +6,27 @@ import express from "express";
 import bodyParser from "body-parser";
 import path from "path";
 import http from "http";
+import { PrismaClient } from "@prisma/client";
+import { withPulse } from "@prisma/extension-pulse";
+import * as socket from "socket.io";
+import { Server } from "socket.io";
+import { Configuration } from "./utils/configuration";
 
-const HOST = process.env.HOST ?? "localhost";
-const PORT = (process.env.PORT as unknown as number) ?? 3000;
+const app = express();
+const server = http.createServer(app);
+export const JWT_SECRET = process.env.JWT_SECRET ?? "default_secret";
+export const ADMIN_SECRET = process.env.ADMIN_SECRET;
+export const io = new Server(server, {
+  cors: {
+    origin: "*",
+  },
+});
+
+export const prismaClientWithPulse = new PrismaClient().$extends(
+  withPulse({
+    apiKey: process.env.PULSE_API_KEY || "",
+  })
+);
 
 export const logger = PinoHttp({
   transport: {
@@ -22,13 +40,6 @@ export const logger = PinoHttp({
   },
 });
 
-const app = express();
-
-const server = http.createServer(app);
-
-export const JWT_SECRET = process.env.JWT_SECRET ?? "default_secret";
-export const ADMIN_SECRET = process.env.ADMIN_SECRET;
-
 app.use(cors());
 app.use(["/doc", "/docs"], swaggerUi.serve, swaggerUi.setup(swaggerFile));
 app.use(logger);
@@ -41,9 +52,10 @@ app.set("views", "./public");
 
 app.use(express.static(path.join(__dirname, "..", "public")));
 
-server.listen(PORT, () => {
-  logger.logger.info(`Server running at http://${HOST}:${PORT}`);
-  logger.logger.info(`Swagger running at http://${HOST}:${PORT}/docs`);
+server.listen(Configuration.port, () => {
+  logger.logger.info(
+    `Server running at http://${Configuration.host}:${Configuration.port}`
+  );
 });
 
 // Adicionar manipulador de erros ao servidor
