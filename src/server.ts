@@ -1,33 +1,19 @@
-import swaggerUi from "swagger-ui-express";
-import swaggerFile from "./assets/swagger-output.json";
-import PinoHttp from "pino-http";
-import cors from "cors";
+// Importações de terceiros
 import express from "express";
-import bodyParser from "body-parser";
-import path from "path";
 import http from "http";
-import { PrismaClient } from "@prisma/client";
-import { withPulse } from "@prisma/extension-pulse";
-import * as socket from "socket.io";
-import { Server } from "socket.io";
+import cors from "cors";
+import swaggerUi from "swagger-ui-express";
+import PinoHttp from "pino-http";
+import path from "path";
+
+// Importações locais
+import swaggerFile from "./assets/swagger-output.json";
 import { Configuration } from "./utils/configuration";
 
 const app = express();
-const server = http.createServer(app);
-export const JWT_SECRET = process.env.JWT_SECRET ?? "default_secret";
-export const ADMIN_SECRET = process.env.ADMIN_SECRET;
-export const io = new Server(server, {
-  cors: {
-    origin: "*",
-  },
-});
+export const httpServer = http.createServer(app);
 
-export const prismaClientWithPulse = new PrismaClient().$extends(
-  withPulse({
-    apiKey: process.env.PULSE_API_KEY || "",
-  })
-);
-
+// Configuração do logger
 export const logger = PinoHttp({
   transport: {
     level: "debug",
@@ -40,26 +26,26 @@ export const logger = PinoHttp({
   },
 });
 
+// Middlewares
 app.use(cors());
 app.use(["/doc", "/docs"], swaggerUi.serve, swaggerUi.setup(swaggerFile));
 app.use(logger);
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-app.use(bodyParser.json());
-app.use(express.urlencoded({ extended: false }));
-
+// Configuração de views
 app.set("view engine", "ejs");
 app.set("views", "./public");
-
 app.use(express.static(path.join(__dirname, "..", "public")));
 
-server.listen(Configuration.port, () => {
+// Inicialização do servidor
+httpServer.listen(Configuration.port, () => {
   logger.logger.info(
     `Server running at http://${Configuration.host}:${Configuration.port}`
   );
 });
 
-// Adicionar manipulador de erros ao servidor
-server.on("error", (err) => {
+httpServer.on("error", (err) => {
   logger.logger.error("Erro no servidor:", err);
 });
 

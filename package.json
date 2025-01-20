@@ -8,8 +8,10 @@
     "@types/cors": "^2.8.17",
     "baileys": "^6.7.9",
     "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "pino-http": "^10.4.0",
+    "pino-pretty": "^13.0.0",
     "prisma": "^6.2.1",
     "socket.io": "^4.8.1",
     "swagger-autogen": "^2.23.7",
@@ -18,7 +20,7 @@
   "scripts": {
     "build": "tsc && npx prisma generate && npx prisma db push && ts-node src/swagger.ts",
     "start": "node dist/main.js",
-    "dev": "ts-node-dev --respawn --transpile-only src/main.ts",
+    "dev": "nodemon src/main.ts",
     "swagger": "ts-node src/swagger.ts",
     "prod:dev": "ts-node-dev --respawn src/main.ts"
   },
