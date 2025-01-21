@@ -1,5 +1,6 @@
 import { Server } from "socket.io";
-import { httpServer, logger } from "../server";
+import { httpServer } from "../server";
+import { whatsappManager } from "./baileys";
 
 export const io: Server = new Server(httpServer, {
   cors: {
@@ -11,9 +12,9 @@ export const io: Server = new Server(httpServer, {
 });
 
 io.on("connection", async (socket) => {
-  logger.logger.info(`Usuário conectado: ${socket.id}`);
+  console.log(`Usuário conectado: ${socket.id}`);
 
   socket.on("disconnect", () => {
-    logger.logger.info(`Usuário desconectado: ${socket.id}`);
+    console.log(`Usuário desconectado: ${socket.id}`);
   });
 });

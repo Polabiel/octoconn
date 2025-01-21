@@ -1,49 +1,81 @@
-import makeWASocket, { DisconnectReason, useMultiFileAuthState } from "baileys";
-import { pathInstance } from "../utils";
-import { io } from "../libs/socket";
+import {
+  WASocket,
+  useMultiFileAuthState,
+  fetchLatestBaileysVersion,
+  makeWASocket,
+  DisconnectReason,
+} from "baileys";
 import { Boom } from "@hapi/boom";
+import NodeCache from "node-cache";
+import { io } from "./socket";
+import Pino from "pino";
 
-export class WhatsAppConnection {
-  private socket: any;
+export class WhatsAppManager {
+  private socket: WASocket | null = null;
+  private readonly msgRetryCounterCache = new NodeCache();
 
   async connect() {
-    const { state, saveCreds } = await useMultiFileAuthState(pathInstance);
+    try {
+      const { state, saveCreds } = await useMultiFileAuthState("./assets/auth");
+      const { version } = await fetchLatestBaileysVersion();
 
-    this.socket = makeWASocket({
-      auth: state,
-      printQRInTerminal: false,
-      browser: ["Ubuntu", "Chrome", "20.0.04"],
-      defaultQueryTimeoutMs: 60000,
-      syncFullHistory: true,
-    });
+      this.socket = makeWASocket({
+        version,
+        logger: Pino({ level: "error" }),
+        printQRInTerminal: false, // Desabilita QR no terminal
+        defaultQueryTimeoutMs: 60 * 1000,
+        auth: state,
+        keepAliveIntervalMs: 60 * 1000,
+        markOnlineOnConnect: true,
+        msgRetryCounterCache: this.msgRetryCounterCache,
+      });
 
-    this.socket.ev.on("connection.update", this.handleConnectionUpdate);
-    this.socket.ev.on("creds.update", saveCreds);
+      // Gerenciar eventos de conexão
+      this.socket.ev.on("connection.update", (update) => {
+        const { connection, lastDisconnect, qr } = update;
 
-    return this.socket;
+        if (connection === "close") {
+          const shouldReconnect =
+            (lastDisconnect?.error as Boom)?.output?.statusCode !==
+            DisconnectReason.loggedOut;
+
+          io.emit("status", {
+            status: "disconnected",
+            shouldReconnect,
+          });
+
+          if (shouldReconnect) {
+            this.connect();
+          }
+        }
+
+        if (qr) {
+          io.emit("qr", {
+            qr,
+          });
+        }
+
+        if (connection === "open") {
+          io.emit("status", {
+            status: "connected",
+          });
+        }
+      });
+
+      this.socket.ev.on("creds.update", saveCreds);
+
+      return this.socket;
+    } catch (error) {
+      io.emit("error", {
+        error: "Falha ao iniciar conexão WhatsApp",
+      });
+      throw error;
+    }
   }
 
-  private readonly handleConnectionUpdate = (update: any) => {
-    const { connection, lastDisconnect } = update;
-
-    if (connection === "close") {
-      const shouldReconnect =
-        (lastDisconnect?.error as Boom)?.output?.statusCode !==
-        DisconnectReason?.loggedOut;
-
-      if (shouldReconnect) {
-        this.connect();
-      }
-    }
-
-    // Emite o QR code para o cliente
-    if (update.qr) {
-      io.emit("whatsapp-qr", update.qr);
-    }
-
-    // Emite o status da conexão
-    if (connection) {
-      io.emit("connection-status", connection);
-    }
-  };
+  getSocket(): WASocket | null {
+    return this.socket;
+  }
 }
+
+export const whatsappManager = new WhatsAppManager();

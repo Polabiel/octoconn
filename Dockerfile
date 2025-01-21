@@ -1,6 +1,5 @@
 # Imagem base Node.js LTS
-FROM node:18-alpine
-
+FROM node:22
 # Diretório de trabalho no container
 WORKDIR /usr/src/app
 
@@ -8,8 +7,7 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 
 # Instalar dependências e gerar Prisma Client
-RUN npm install && \
- npx prisma generate
+RUN npm install && npx prisma generate
 
 # Copiar código fonte
 COPY . .
