@@ -1,20 +1,23 @@
-import { Server } from "socket.io";
-import { httpServer } from "../server";
-import { whatsappManager } from "./baileys";
+import { io } from "../server";
+import { logger } from "../server";
+import { WhatsAppManager } from "./baileys";
 
-export const io: Server = new Server(httpServer, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"],
-  },
-  pingTimeout: 180000,
-  pingInterval: 60000,
-});
+const whatsappManager = new WhatsAppManager();
 
-io.on("connection", async (socket) => {
-  console.log(`Usuário conectado: ${socket.id}`);
+export const initializeSocket = () => {
+  io.on("connection", (socket) => {
+    logger.logger.info("Nova conexão estabelecida:", socket.id);
 
-  socket.on("disconnect", () => {
-    console.log(`Usuário desconectado: ${socket.id}`);
+    socket.on("start-whatsapp", async () => {
+      try {
+        await whatsappManager.connect();
+      } catch (error) {
+        logger.logger.error("Erro ao conectar WhatsApp:", error);
+      }
+    });
+
+    socket.on("disconnect", () => {
+      logger.logger.info("Cliente desconectado:", socket.id);
+    });
   });
-});
+};

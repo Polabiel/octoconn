@@ -9,14 +9,15 @@ import path from "path";
 // Importações locais
 import swaggerFile from "./assets/swagger-output.json";
 import { Configuration } from "./utils/configuration";
+import { Server } from "socket.io";
 
 const app = express();
-export const httpServer = http.createServer(app);
+const httpServer = http.createServer(app);
 
 // Configuração do logger
 export const logger = PinoHttp({
   transport: {
-    level: "debug",
+    level: "warn",
     target: "pino-pretty",
     options: {
       destination: 2,
@@ -49,4 +50,13 @@ httpServer.on("error", (err) => {
   logger.logger.error("Erro no servidor:", err);
 });
 
-export default app;
+const io: Server = new Server(httpServer, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"],
+  },
+  pingTimeout: 180000,
+  pingInterval: 60000,
+});
+
+export { io, httpServer, app };

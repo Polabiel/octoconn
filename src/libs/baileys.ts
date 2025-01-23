@@ -7,8 +7,8 @@ import {
 } from "baileys";
 import { Boom } from "@hapi/boom";
 import NodeCache from "node-cache";
-import { io } from "./socket";
 import Pino from "pino";
+import { io } from "../server";
 
 export class WhatsAppManager {
   private socket: WASocket | null = null;
@@ -34,6 +34,8 @@ export class WhatsAppManager {
       this.socket.ev.on("connection.update", (update) => {
         const { connection, lastDisconnect, qr } = update;
 
+        console.log("connection.update", update.qr);
+
         if (connection === "close") {
           const shouldReconnect =
             (lastDisconnect?.error as Boom)?.output?.statusCode !==
@@ -49,11 +51,9 @@ export class WhatsAppManager {
           }
         }
 
-        if (qr) {
-          io.emit("qr", {
-            qr,
-          });
-        }
+        io.emit("qr", {
+          qr,
+        });
 
         if (connection === "open") {
           io.emit("status", {

@@ -1,19 +1,16 @@
 import { Request, Response } from "express";
-import app from "./server";
-import { whatsappManager } from "./libs/baileys";
+import io from "socket.io-client";
+import { app } from "./server";
+import { initializeSocket } from "./libs/socket";
 
-const client = new WebSocket("ws://localhost:3000");
+const socket = io("http://localhost:3000");
 
 app.get("/", (req: Request, res: Response) => {
-  whatsappManager
-    .connect()
-    .then(() => {
-      client.onopen = () => {
-        // receber a mensagem qr do servidor
-        client.send("start-whatsapp");
-      };
-    })
-    .catch((error) => {
-      res.status(500).send("Falha ao iniciar conexão WhatsApp");
-    });
+  res.send("Conexão iniciada com sucesso!");
 });
+
+socket.on("connect", () => {
+  console.log("Conexão estabelecida com sucesso!");
+});
+
+initializeSocket();
