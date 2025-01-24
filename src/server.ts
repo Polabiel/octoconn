@@ -10,6 +10,7 @@ import path from "path";
 import swaggerFile from "./assets/swagger-output.json";
 import { Configuration } from "./utils/configuration";
 import { Server } from "socket.io";
+import { initializeSocket } from "./libs/socket";
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -58,5 +59,7 @@ const io: Server = new Server(httpServer, {
   pingTimeout: 180000,
   pingInterval: 60000,
 });
+
+initializeSocket();
 
 export { io, httpServer, app };

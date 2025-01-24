@@ -34,8 +34,6 @@ export class WhatsAppManager {
       this.socket.ev.on("connection.update", (update) => {
         const { connection, lastDisconnect, qr } = update;
 
-        console.log("connection.update", update.qr);
-
         if (connection === "close") {
           const shouldReconnect =
             (lastDisconnect?.error as Boom)?.output?.statusCode !==
